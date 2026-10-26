@@ -8,7 +8,7 @@
 
 <div id="board" class:on>
   <div id="bc">
-    <div id="bt">Best performances</div>
+    <div id="bt">Nejlepší kostýmy</div>
     <div id="rows">
     {#each visible as r, i (r.id)}
       <div class="brow" style="--i:{i};--w:{Math.max(0, Math.min(1, r.score / 10))}">
@@ -17,7 +17,7 @@
         <span class="bs">{fmt(r.score)}</span>
       </div>
     {:else}
-      <div id="empty">No scores yet</div>
+      <div id="empty">Zatím žádné skóre</div>
     {/each}
     </div>
   </div>

@@ -143,7 +143,7 @@ function setScore(v,anim){const b=$('#badge');b.classList.remove('stamp','got');
 function snapHide(){plate.classList.add('snap');plate.classList.remove('show');void plate.offsetWidth;plate.classList.remove('snap')}
 function doShow(m){clearTimeout(t);const was=plate.classList.contains('show');plate.classList.remove('show');
  t=setTimeout(()=>{fill(m);setScore(m.score,false);liveId=m.id??null;plate.classList.add('show');flicker();if(AUTO_BALLOON)balloon()},was?1000:50)}
-function cut(text,swap){const el=$('#cut'),D=1800,E='cubic-bezier(.65,0,.35,1)';$('#cuttxt').textContent=text||'Halloween Runway';el.style.visibility='visible';
+function cut(text,swap){const el=$('#cut'),D=1800,E='cubic-bezier(.65,0,.35,1)';$('#cuttxt').textContent=text||'Halloweenská Runway';el.style.visibility='visible';
  $('#cutbg').animate([{transform:'translateY(-130%)',easing:E},{transform:'translateY(0)',offset:.38},{transform:'translateY(0)',offset:.62,easing:E},{transform:'translateY(125%)'}],{duration:D}).onfinish=()=>el.style.visibility='hidden';
  $('#cuttxt').animate([{opacity:0,transform:'scale(.8)'},{opacity:0,transform:'scale(.8)',offset:.3},{opacity:1,transform:'scale(1)',offset:.42},{opacity:1,offset:.6},{opacity:0,transform:'scale(1.1)'}],{duration:D});
  setTimeout(swap,D*.48)}
@@ -157,7 +157,7 @@ function renderBoard(still){const box=$('#rows');box.className=still?'still':'';
 function openBoard(){boardOn=true;renderBoard(false);$('#board').classList.add('on')}
 function closeBoard(){boardOn=false;$('#board').classList.remove('on')}
 function handle(m){
- if(m.type==='show'){m.cut?cut('Halloween Runway',()=>{snapHide();setTimeout(()=>doShow(m),60)}):doShow(m)}
+ if(m.type==='show'){m.cut?cut('Halloweenská Runway',()=>{snapHide();setTimeout(()=>doShow(m),60)}):doShow(m)}
  else if(m.type==='hide'){clearTimeout(t);plate.classList.remove('show');liveId=null}
  else if(m.type==='score'){if(m.rows)boardRows=m.rows;if(boardOn)renderBoard(true);
   if(m.id!=null&&m.id===liveId&&plate.classList.contains('show'))setScore(m.score,!boardOn)}

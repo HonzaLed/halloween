@@ -11,7 +11,7 @@
   /** Plays the 1.8 s curtain. `swap` runs while the screen is fully covered. */
   export function play(label, swap) {
     const D = 1800, E = 'cubic-bezier(.65,0,.35,1)';
-    text = label || 'Halloween Runway';
+    text = label || 'Halloweenská runway';
     visible = true;
     bgEl.animate([
       { transform: 'translateY(-130%)', easing: E },

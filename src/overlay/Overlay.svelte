@@ -31,7 +31,7 @@
   function handle(m) {
     switch (m.type) {
       case 'show':
-        if (m.cut) cut.play('Halloween Runway', () => { plate.snapHide(); setTimeout(() => plate.show(m), 60); });
+        if (m.cut) cut.play('Halloweenská Runway', () => { plate.snapHide(); setTimeout(() => plate.show(m), 60); });
         else plate.show(m);
         break;
       case 'hide': plate.hide(); break;
@@ -41,8 +41,8 @@
         break;
       case 'board':
         if (m.rows) rows = m.rows;
-        if (m.on && !boardOn) { if (m.quiet) boardOn = true; else cut.play('Best performances', () => { boardOn = true; }); }
-        else if (!m.on && boardOn) cut.play('Back to the runway', () => { boardOn = false; });
+        if (m.on && !boardOn) { if (m.quiet) boardOn = true; else cut.play('Nejlepší kostýmy', () => { boardOn = true; }); }
+        else if (!m.on && boardOn) cut.play('Zpět na runway', () => { boardOn = false; });
         break;
       case 'cut': cut.play(m.text, () => {}); break;
       case 'balloon': balloon(); break;
