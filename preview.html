@@ -1,0 +1,230 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Runway graphics preview (round 5)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Creepster&family=Special+Elite&display=swap" rel="stylesheet">
+<style>
+/* ===== OVERLAY (this block becomes overlay.html) ===== */
+:root{--blood:#b3101c;--bone:#f1dcdc;--ash:#e9a9ad;--s:1}
+#stage{position:absolute;left:0;top:0;width:1920px;height:1080px;overflow:hidden;transform-origin:0 0;font-family:'Special Elite','Courier New',monospace}
+#wrap{position:absolute;left:calc(90px*var(--s));bottom:calc(90px*var(--s));transform:scale(var(--s));transform-origin:0 100%}
+#clip{position:relative;overflow:hidden;padding:0 60px 60px;margin:0 -60px -60px}
+#plate{position:relative;min-width:760px;max-width:min(1300px,calc((1920px - 180px*var(--s))/var(--s)));box-sizing:border-box;padding:84px 250px 30px 56px;background:#0d0407;border:3px solid var(--blood);box-shadow:0 0 36px 4px rgba(179,16,28,.6);transform:translateY(calc(-100% - 90px));transition:transform .8s cubic-bezier(.6,0,.3,1);will-change:transform}
+.show #plate{transform:none}
+.snap #plate,.snap .drip{transition:none!important;animation:none!important}
+#bar{position:absolute;left:0;right:0;top:0;height:16px;background:var(--blood)}
+.drip{position:absolute;top:10px;background:var(--blood);transform:scaleY(0);transform-origin:top;transition:transform 1.2s cubic-bezier(.3,.9,.4,1);will-change:transform}
+.show .drip{transform:scaleY(1);animation:flow var(--d) ease-out 1.5s forwards}
+@keyframes flow{to{transform:scaleY(var(--f))}}
+#costume,#who{position:relative;z-index:1}
+#costume{font-family:Creepster,Impact,cursive;color:var(--bone);line-height:.95;letter-spacing:2px;text-shadow:0 0 14px rgba(179,16,28,.9),3px 3px 0 #5a0810}
+#who{margin-top:18px;display:flex;gap:22px;align-items:center;font-size:36px;color:var(--ash)}
+#cls{border:2px solid var(--blood);padding:2px 16px;color:var(--bone);background:rgba(179,16,28,.35)}
+#cls:empty,#real:empty{display:none}
+#badge{position:absolute;right:50px;top:56%;width:160px;height:160px;margin-top:-80px;border-radius:50%;display:grid;place-items:center;box-sizing:border-box;border:4px dashed rgba(241,220,220,.3);color:rgba(241,220,220,.3);font:96px/1 Creepster,Impact,cursive;z-index:1}
+#badge.got{border:5px solid var(--bone);color:var(--bone);background:radial-gradient(circle,#c4121f,#7a0a12 75%);box-shadow:0 0 34px 6px rgba(179,16,28,.8);transform:rotate(-5deg);text-shadow:2px 2px 0 #3a0409}
+#badge.stamp{animation:stamp .7s cubic-bezier(.2,.8,.3,1) both}
+@keyframes stamp{0%{transform:scale(3.4) rotate(-18deg);opacity:0}55%{transform:scale(.88) rotate(2deg);opacity:1}75%{transform:scale(1.07) rotate(-6deg)}100%{transform:scale(1) rotate(-5deg);opacity:1}}
+.flick{animation:fl .9s steps(1) 1}
+@keyframes fl{0%,100%{opacity:1}8%{opacity:.15}12%{opacity:1}22%{opacity:.35}26%{opacity:1}60%{opacity:.6}64%{opacity:1}}
+.balloon{position:absolute;bottom:calc(-280px*var(--s));pointer-events:none;z-index:10}
+.balloon svg{display:block;width:calc(110px*var(--s));height:auto}
+#flash{position:absolute;inset:0;opacity:0;z-index:15;pointer-events:none;background:radial-gradient(ellipse at center,rgba(179,16,28,0) 35%,rgba(179,16,28,.85) 100%)}
+/* cutscreen */
+#cut{position:absolute;inset:0;overflow:hidden;visibility:hidden;pointer-events:none;z-index:50}
+#cutbg{position:absolute;inset:0;background:linear-gradient(#8f0e19,#5e0810);transform:translateY(-130%)}
+#cutbg i{position:absolute;top:100%;background:#5e0810}
+#cutbg b{position:absolute;bottom:100%;background:#8f0e19}
+#cuttxt{position:absolute;inset:0;display:grid;place-items:center;font:170px Creepster,Impact,cursive;color:var(--bone);text-shadow:0 0 30px #000,4px 4px 0 #2a0307;opacity:0}
+/* scoreboard */
+#board{position:absolute;inset:0;z-index:20;visibility:hidden;opacity:0;background:radial-gradient(ellipse at center,rgba(20,4,8,.97),rgba(5,1,3,.99));transition:opacity .5s,visibility 0s .5s}
+#board.on{visibility:visible;opacity:1;transition:opacity .5s}
+#bc{position:absolute;left:50%;top:50px;width:1400px;margin-left:-700px;transform:scale(var(--s));transform-origin:50% 0}
+#bt{font:110px/1.1 Creepster,Impact,cursive;text-align:center;color:var(--bone);text-shadow:0 0 24px rgba(179,16,28,.9),4px 4px 0 #5a0810;margin-bottom:24px}
+.brow{position:relative;display:grid;grid-template-columns:100px 1fr 190px;align-items:center;height:96px;margin-bottom:8px;padding:0 24px;background:rgba(255,255,255,.05);border-left:6px solid var(--blood);overflow:hidden}
+.brow:first-child{height:110px;border-left-color:var(--bone)}
+.brow::before{content:'';position:absolute;left:0;top:0;bottom:0;width:calc(var(--w)*100%);background:linear-gradient(90deg,rgba(179,16,28,.6),rgba(179,16,28,.08));transform-origin:left}
+.brow>*{position:relative}
+.on .brow{animation:rowin .6s cubic-bezier(.2,.8,.3,1) both;animation-delay:calc(var(--i)*.1s + .5s)}
+.on .brow::before{animation:bar 1s cubic-bezier(.2,.8,.3,1) both;animation-delay:calc(var(--i)*.1s + .8s)}
+.still .brow,.still .brow::before{animation:none!important}
+@keyframes rowin{from{opacity:0;transform:translateX(-140px)}to{opacity:1;transform:none}}
+@keyframes bar{from{transform:scaleX(0)}to{transform:none}}
+.rk{font:64px Creepster,Impact,cursive;color:var(--ash)}
+.nm{font:52px/1 Creepster,Impact,cursive;color:var(--bone);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nm small{display:block;font:24px 'Special Elite','Courier New',monospace;color:var(--ash);margin-top:6px}
+.bs{font:68px Creepster,Impact,cursive;text-align:right;color:var(--bone);text-shadow:2px 2px 0 #3a0409}
+#empty{font:40px 'Special Elite',monospace;color:var(--ash);text-align:center;padding:60px}
+
+/* ===== PREVIEW CHROME ===== */
+:root{--bg:#120609;--card:#1d0a0f;--line:#4a1a21}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--bone);font:15px/1.45 system-ui,sans-serif}
+main{max-width:1100px;margin:0 auto;padding:20px}
+h1{font-size:22px;margin:0 0 4px}h2{font-size:16px;margin:0 0 4px}h3{font-size:15px;margin:0 0 8px}p{margin:0 0 10px;opacity:.8}
+#viewport{position:sticky;top:8px;z-index:30;max-width:880px;margin:0 auto;overflow:hidden;border:1px solid var(--line);border-radius:6px;background:radial-gradient(ellipse at 50% 85%,#3a2a2e 0,#14090c 60%,#050203 100%)}
+#viewport.checker{background:repeating-conic-gradient(#2a2a2a 0 25%,#3a3a3a 0 50%) 0 0/28px 28px}
+#viewport .tag{position:absolute;right:12px;top:8px;font-size:12px;opacity:.4}
+.bar,.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:10px 0}
+button{font:inherit;color:var(--bone);background:#2b1017;border:1px solid var(--line);border-radius:5px;padding:7px 12px;cursor:pointer}
+button:hover{border-color:var(--blood)}button.go{background:var(--blood);border-color:var(--blood);font-weight:600}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid #ff5a66;outline-offset:1px}
+input[type=text],input[type=number],textarea{font:inherit;color:var(--bone);background:#0b0406;border:1px solid var(--line);border-radius:5px;padding:7px 9px}
+textarea{width:100%}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:12px;margin:12px 0}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:12px}
+.panel ul{list-style:none;margin:0;padding:0;max-height:260px;overflow:auto}
+.panel li{display:flex;gap:8px;padding:5px 4px;border-bottom:1px solid var(--line);cursor:pointer}
+.panel li.live{background:rgba(179,16,28,.3)}.panel li span{flex:1}.panel li b{opacity:.8}
+table{width:100%;border-collapse:collapse;font-size:14px}td,th{padding:4px 6px;border-bottom:1px solid var(--line);text-align:left}
+tr.live{background:rgba(179,16,28,.3)}td input{width:74px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:12px}
+.card.ok{border-color:#2f7a45}.card.chg{border-color:#c98a1b}
+.card label{margin-right:14px;cursor:pointer}.card textarea{margin-top:8px}
+#out{min-height:180px;font:13px/1.4 ui-monospace,monospace}
+</style></head><body><main>
+<h1>Runway graphics preview (round 5)</h1>
+<p>Everything below drives the stage above, as the three real pages will: the control page, the organizer table and the OBS overlay. Try it: show a person, then type a score for them in the organizer table.</p>
+<div id="viewport"><span class="tag">stand-in for your camera feed</span>
+<div id="stage">
+ <div id="flash"></div>
+ <div id="wrap"><div id="clip"><div id="plate"><div id="bar"></div><div id="drips"></div>
+  <div id="costume"></div><div id="who"><span id="real"></span><span id="cls"></span></div><div id="badge">?</div></div></div></div>
+ <div id="board"><div id="bc"><div id="bt">Best performances</div><div id="rows"></div></div></div>
+ <div id="cut"><div id="cutbg"></div><div id="cuttxt"></div></div>
+</div></div>
+<div class="bar"><button id="bg">Toggle transparent background</button>
+<label>Scale <input type="range" id="sc" min="0.5" max="2.5" step="0.05" value="1"> <code id="scv">?scale=1</code></label>
+<label><input type="checkbox" id="ab"> Balloon with every name (<code>?balloon=1</code>)</label></div>
+
+<div class="cols">
+ <div class="panel"><h3>Page 2: Control (phone)</h3>
+  <p id="now">Nothing on screen</p>
+  <div class="row"><button class="go" id="next">Show next</button><button id="prev">Previous</button><button id="hide">Hide</button></div>
+    <div class="row"><button id="brd">Scoreboard: show</button><button id="tcut">Test cutscreen</button><button id="bal">Balloon</button><button id="boo">Boo flash</button></div>
+  <ul id="list"></ul></div>
+ <div class="panel"><h3>Page 3: Organizer table</h3>
+  <p>Type the committee's points (0 to 10). Saved automatically; if that person is on screen, the score appears next to the name.</p>
+  <table><thead><tr><th>#</th><th>Costume</th><th>Name</th><th>Class</th><th>Points</th></tr></thead><tbody id="tb"></tbody></table>
+  <div class="row"><button id="rnd">Give the person on screen a random score</button></div></div>
+</div>
+
+<h2 style="margin-top:16px">Your review</h2>
+<div class="grid" id="cards"></div>
+<h2 style="margin-top:20px">General notes</h2>
+<textarea id="gen" rows="3" placeholder="Anything else..."></textarea>
+<h2 style="margin-top:20px">Feedback to send back</h2>
+<textarea id="out" readonly></textarea>
+<div class="row"><button class="go" id="copy">Copy feedback</button></div>
+</main>
+<script>
+const $=s=>document.querySelector(s), plate=$('#wrap');
+let SC=1,AUTO_BALLOON=false,boardRows=[],boardOn=false,liveId=null,t;
+/* ===== OVERLAY LOGIC ===== */
+for(let i=0;i<11;i++){const d=document.createElement('div'),w=8+Math.random()*10;
+ d.className='drip';d.style.cssText=`left:${i*9+Math.random()*6}%;width:${w}px;height:${14+Math.random()*22}px;border-radius:0 0 ${w}px ${w}px;transition-delay:${Math.random()*.6}s;--d:${16+Math.random()*16}s;--f:${1.8+Math.random()*1.4}`;$('#drips').appendChild(d)}
+for(let i=0;i<30;i++){const d=document.createElement('i'),w=34+Math.random()*34;
+ d.style.cssText=`left:${i*3.4-1+Math.random()*2}%;width:${w}px;height:${50+Math.random()*170}px;border-radius:0 0 ${w}px ${w}px`;$('#cutbg').appendChild(d)}
+for(let i=0;i<30;i++){const d=document.createElement('b'),w=40+Math.random()*50;
+ d.style.cssText=`left:${i*3.4-1+Math.random()*2}%;width:${w}px;height:${30+Math.random()*190}px;border-radius:${w}px ${w}px 0 0`;$('#cutbg').appendChild(d)}
+const BALLOON=`<svg viewBox="0 0 110 240"><defs><radialGradient id="g" cx=".35" cy=".3" r=".8"><stop offset="0" stop-color="#e5303c"/><stop offset=".6" stop-color="#b3101c"/><stop offset="1" stop-color="#5a0810"/></radialGradient></defs><ellipse cx="55" cy="62" rx="48" ry="58" fill="url(#g)"/><path d="M55 118l-10 13h20z" fill="#9a0e18"/><ellipse cx="36" cy="38" rx="8" ry="16" fill="#fff" opacity=".35" transform="rotate(25 36 38)"/><path d="M55 131C44 160 66 182 52 238" stroke="#e8d0d0" stroke-width="2" fill="none"/></svg>`;
+function balloon(){const b=document.createElement('div');b.className='balloon';b.innerHTML=BALLOON;
+ b.style.left=Math.random()*(1920-120*SC)+'px';$('#stage').appendChild(b);const dx=(Math.random()-.5)*200;
+ b.animate([{transform:'translate(0,0) rotate(-4deg)'},{transform:`translate(${dx/2}px,-700px) rotate(5deg)`,offset:.5},{transform:`translate(${dx}px,-1450px) rotate(-3deg)`}],{duration:7000,easing:'ease-in'}).onfinish=()=>b.remove()}
+function flicker(){const c=$('#costume');c.classList.remove('flick');void c.offsetWidth;c.classList.add('flick')}
+function boo(){$('#flash').animate([{opacity:0},{opacity:1},{opacity:.1},{opacity:.9},{opacity:0}],{duration:900});flicker()}
+function fill(m){const n=(m.costume||'').trim();$('#costume').textContent=n;
+ $('#costume').style.fontSize=(n.length>24?78:n.length>15?100:128)+'px';$('#real').textContent=m.real||'';$('#cls').textContent=m.cls||''}
+const fmt=v=>String(Math.round(v*10)/10);
+function setScore(v,anim){const b=$('#badge');b.classList.remove('stamp','got');void b.offsetWidth;
+ if(v==null||v===''){b.textContent='?';return}
+ b.textContent=fmt(v);b.classList.add('got');
+ if(anim){b.classList.add('stamp');$('#clip').animate([{transform:'none'},{transform:'translate(-9px,3px)'},{transform:'translate(7px,-3px)'},{transform:'translate(-4px,2px)'},{transform:'none'}],{duration:400,delay:250})}}
+function snapHide(){plate.classList.add('snap');plate.classList.remove('show');void plate.offsetWidth;plate.classList.remove('snap')}
+function doShow(m){clearTimeout(t);const was=plate.classList.contains('show');plate.classList.remove('show');
+ t=setTimeout(()=>{fill(m);setScore(m.score,false);liveId=m.id??null;plate.classList.add('show');flicker();if(AUTO_BALLOON)balloon()},was?1000:50)}
+function cut(text,swap){const el=$('#cut'),D=1800,E='cubic-bezier(.65,0,.35,1)';$('#cuttxt').textContent=text||'Halloween Runway';el.style.visibility='visible';
+ $('#cutbg').animate([{transform:'translateY(-130%)',easing:E},{transform:'translateY(0)',offset:.38},{transform:'translateY(0)',offset:.62,easing:E},{transform:'translateY(125%)'}],{duration:D}).onfinish=()=>el.style.visibility='hidden';
+ $('#cuttxt').animate([{opacity:0,transform:'scale(.8)'},{opacity:0,transform:'scale(.8)',offset:.3},{opacity:1,transform:'scale(1)',offset:.42},{opacity:1,offset:.6},{opacity:0,transform:'scale(1.1)'}],{duration:D});
+ setTimeout(swap,D*.48)}
+function renderBoard(still){const box=$('#rows');box.className=still?'still':'';box.innerHTML='';
+ const n=Math.max(3,Math.min(8,Math.floor((1000/SC-140)/104)));const rows=boardRows.slice(0,n);
+ if(!rows.length){const e=document.createElement('div');e.id='empty';e.textContent='No scores yet';box.append(e);return}
+ rows.forEach((r,i)=>{const d=document.createElement('div');d.className='brow';d.style.cssText=`--i:${i};--w:${Math.max(0,Math.min(1,r.score/10))}`;
+  const a=document.createElement('span'),b=document.createElement('span'),c=document.createElement('span'),s=document.createElement('small');
+  a.className='rk';a.textContent=i+1;b.className='nm';b.textContent=r.costume;s.textContent=[r.real,r.cls].filter(Boolean).join(', ');b.append(s);c.className='bs';c.textContent=fmt(r.score);
+  d.append(a,b,c);box.append(d)})}
+function openBoard(){boardOn=true;renderBoard(false);$('#board').classList.add('on')}
+function closeBoard(){boardOn=false;$('#board').classList.remove('on')}
+function handle(m){
+ if(m.type==='show'){m.cut?cut('Halloween Runway',()=>{snapHide();setTimeout(()=>doShow(m),60)}):doShow(m)}
+ else if(m.type==='hide'){clearTimeout(t);plate.classList.remove('show');liveId=null}
+ else if(m.type==='score'){if(m.rows)boardRows=m.rows;if(boardOn)renderBoard(true);
+  if(m.id!=null&&m.id===liveId&&plate.classList.contains('show'))setScore(m.score,!boardOn)}
+ else if(m.type==='board'){if(m.rows)boardRows=m.rows;
+  if(m.on&&!boardOn)m.quiet?openBoard():cut('Best performances',openBoard);else if(!m.on&&boardOn)cut('Back to the runway',closeBoard)}
+ else if(m.type==='cut')cut(m.text,()=>{});
+ else if(m.type==='balloon')balloon();
+ else if(m.type==='boo')boo()}
+
+/* ===== PREVIEW: sample data, mini control + organizer pages ===== */
+const D=[
+ {costume:"Pennywise's Cousin",real:'Mia Novak',cls:'7B'},
+ {costume:'Zombie Cheerleader',real:'Ella Berg',cls:'8A',score:8.5},
+ {costume:'The Headless Horseman of Sleepy Hollow',real:'Jonas Weber-Hartmann',cls:'9C'},
+ {costume:'Vampire Librarian',real:'Tom Hruby',cls:'6A',score:9},
+ {costume:'Haunted Toaster',real:'Lukas Meier',cls:'7A',score:7},
+ {costume:'Mummy Meltdown',real:'Anna Kral',cls:'8B',score:9.5},
+ {costume:'Skeleton DJ',real:'Max Svoboda',cls:'9A',score:6.5},
+ {costume:'Witch of the Wi-Fi',real:'Sofie Dvorak',cls:'6B',score:8},
+ {costume:'Ghost of Math Class',real:'Eva Horak',cls:'7B',score:7.5}];
+D.forEach((p,i)=>p.id=i+1);
+let cur=-1,bw=false,shown=false;
+const rows=()=>D.map((p,i)=>({...p,i})).filter(p=>p.score!=null).sort((a,b)=>b.score-a.score||a.i-b.i).map(({costume,real,cls,score})=>({costume,real,cls,score}));
+const trs=[],inputs=D.map((p,i)=>{const tr=document.createElement('tr');
+ [i+1,p.costume,p.real,p.cls].forEach(v=>{const td=document.createElement('td');td.textContent=v;tr.append(td)});
+ const td=document.createElement('td'),inp=document.createElement('input');inp.type='number';inp.min=0;inp.max=10;inp.step=.5;inp.value=p.score??'';
+ inp.onchange=()=>{const v=inp.value===''?null:Math.min(10,Math.max(0,+inp.value));scoreFor(i,v)};td.append(inp);tr.append(td);$('#tb').append(tr);trs.push(tr);return inp});
+function scoreFor(i,v){D[i].score=v;inputs[i].value=v??'';handle({type:'score',id:D[i].id,score:v,rows:rows()});ctl()}
+function ctl(){$('#now').textContent=(bw?'Scoreboard on top. ':'')+(cur>=0&&shown?'Name underneath: '+D[cur].costume:'No name underneath');
+ const ul=$('#list');ul.innerHTML='';D.forEach((p,i)=>{const li=document.createElement('li');if(i===cur)li.className='live';
+  const s=document.createElement('span'),b=document.createElement('b');s.textContent=p.costume;b.textContent=p.score!=null?fmt(p.score):'';li.append(s,b);li.onclick=()=>showIdx(i);ul.append(li)});
+ trs.forEach((tr,i)=>tr.classList.toggle('live',i===cur))}
+function showIdx(i){if(i<0||i>=D.length)return;cur=i;shown=true;handle({type:'show',...D[i]});setTimeout(ctl,0)}
+$('#next').onclick=()=>showIdx(cur+1);$('#prev').onclick=()=>showIdx(cur-1);
+$('#hide').onclick=()=>{shown=false;handle({type:'hide'});ctl()};
+$('#brd').onclick=()=>{bw=!bw;handle({type:'board',on:bw,rows:rows()});$('#brd').textContent='Scoreboard: '+(bw?'hide':'show')};
+$('#tcut').onclick=()=>handle({type:'cut'});$('#bal').onclick=()=>handle({type:'balloon'});$('#boo').onclick=()=>handle({type:'boo'});
+$('#rnd').onclick=()=>{if(cur>=0&&shown)scoreFor(cur,Math.round((5+Math.random()*5)*2)/2)};
+$('#bg').onclick=()=>$('#viewport').classList.toggle('checker');
+$('#sc').oninput=e=>{SC=+e.target.value;$('#stage').style.setProperty('--s',SC);$('#scv').textContent='?scale='+SC;if(boardOn)renderBoard(true)};
+$('#ab').onchange=e=>{AUTO_BALLOON=e.target.checked};
+function fit(){const v=$('#viewport'),k=v.clientWidth/1920;$('#stage').style.transform=`scale(${k})`;v.style.height=1080*k+'px'}
+new ResizeObserver(fit).observe($('#viewport'));fit();ctl();
+
+/* ===== REVIEW CARDS ===== */
+const ITEMS=[
+ {id:'plate',title:'Name plate (red glow fixed)',desc:'The glow now travels with the plate instead of appearing first.',play:()=>{scoreFor(0,null);showIdx(0)}},
+ {id:'score',title:'Score reveal',desc:'Name first with a "?" slot. About 4 s later the committee score stamps in.',play:()=>{scoreFor(0,null);showIdx(0);setTimeout(()=>scoreFor(0,8.5),4800)}},
+ {id:'cut',title:'Cutscreen (manual button only)',desc:'Plays only when you press the button. Showing a name never triggers it.',play:()=>handle({type:'cut'})},
+ {id:'board',title:'Scoreboard mode + transition',desc:'Curtain, then best performances slide in over everything. The name underneath keeps its state and is back when the board closes.',play:()=>$('#brd').click()},
+ {id:'org',title:'Organizer table (page 3)',desc:'Layout and fields above. Do you need anything else in it?'},
+ {id:'ctl',title:'Control page changes',desc:'Test cutscreen and scoreboard buttons; no automatic cutscreen.'},
+ {id:'look',title:'Overall look',desc:'Colours, fonts, sizes, anything else.'}];
+const fb={};let general='';
+try{Object.assign(fb,JSON.parse(localStorage.getItem('runway_fb5')||'{}'))}catch(_){}
+function report(){const L=['RUNWAY GRAPHICS FEEDBACK (round 5)'];
+ ITEMS.forEach(i=>{const f=fb[i.id]||{};L.push(`- ${i.title}: ${f.v==='ok'?'APPROVED':f.v==='chg'?'NEEDS CHANGES':'not reviewed'}${f.n?' | '+f.n.replace(/\n/g,' '):''}`)});
+ if(general.trim())L.push('General: '+general.trim().replace(/\n/g,' '));
+ $('#out').value=L.join('\n');try{localStorage.setItem('runway_fb5',JSON.stringify(fb))}catch(_){}}
+ITEMS.forEach(i=>{const f=fb[i.id]=fb[i.id]||{};const c=document.createElement('div');c.className='card';
+ c.innerHTML=`<h2></h2><p></p>${i.play?'<button class="go">Play</button> ':''}<div class="row"><label><input type="radio" name="r-${i.id}" value="ok"> Approve</label><label><input type="radio" name="r-${i.id}" value="chg"> Needs changes</label></div><textarea rows="2" placeholder="Notes (optional)"></textarea>`;
+ c.querySelector('h2').textContent=i.title;c.querySelector('p').textContent=i.desc;
+ const set=()=>{c.classList.toggle('ok',f.v==='ok');c.classList.toggle('chg',f.v==='chg')};
+ if(i.play)c.querySelector('button').onclick=i.play;
+ c.querySelectorAll('input[type=radio]').forEach(r=>{r.checked=f.v===r.value;r.onchange=()=>{f.v=r.value;set();report()}});
+ const ta=c.querySelector('textarea');ta.value=f.n||'';ta.oninput=()=>{f.n=ta.value;report()};set();$('#cards').append(c)});
+$('#gen').oninput=e=>{general=e.target.value;report()};
+$('#copy').onclick=()=>{const o=$('#out');o.select();(navigator.clipboard?navigator.clipboard.writeText(o.value):Promise.reject()).catch(()=>document.execCommand('copy'));$('#copy').textContent='Copied';setTimeout(()=>$('#copy').textContent='Copy feedback',1500)};
+report();
+</script></body></html>
