@@ -24,7 +24,7 @@ const str = v => String(v ?? '').trim().slice(0, 100);
 const byId = id => state.list.find(p => p.id === id);
 const rows = () => state.list.map((p, i) => ({ ...p, i })).filter(p => p.score != null)
   .sort((a, b) => b.score - a.score || a.i - b.i).map(({ id, costume, real, cls, score }) => ({ id, costume, real, cls, score }));
-const num = v => { if (v === null || v === '' || v === undefined) return null; const n = Number(v); return Number.isFinite(n) ? Math.round(Math.min(10, Math.max(0, n)) * 10) / 10 : undefined; };
+const num = v => { if (v === null || v === '' || v === undefined) return null; const n = Number(v); return Number.isFinite(n) ? Math.round(Math.min(100, Math.max(0, n)) * 10) / 10 : undefined; };
 
 const keyOf = p => [p.costume, p.real, p.cls].map(s => s.toLowerCase()).join('\u0001');
 const sendRows = (id = -1, score = null) => bcast('cmd', { type: 'score', id, score, rows: rows() });

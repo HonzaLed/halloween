@@ -25,7 +25,7 @@
 
   async function commit(p, e) {
     const raw = e.currentTarget.value;
-    const v = raw === '' ? null : Math.min(10, Math.max(0, +raw));
+    const v = raw === '' ? null : Math.min(100, Math.max(0, +raw));
     if (v !== null) e.currentTarget.value = v;
     const r = await post('/api/score', { id: p.id, score: v }, () => { status = 'Offline'; });
     if (r?.ok) { saved = p.id; setTimeout(() => { if (saved === p.id) saved = null; }, 1500); }
