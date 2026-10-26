@@ -10,14 +10,14 @@ const DIST = path.join(ROOT, 'dist');
 const DATA = process.env.DATA_FILE || path.join(ROOT, 'data.json');
 const PORT = process.env.PORT || 3000, KEY = process.env.CONTROL_KEY || '';
 
-let state = { list: [], curId: null, live: null, board: false, nextId: 1 };
+let state = { list: [], curId: null, live: null, hidden: false, board: false, nextId: 1 };
 try { const d = JSON.parse(fs.readFileSync(DATA, 'utf8')); state.list = d.list || []; state.curId = d.curId ?? null; state.nextId = d.nextId || 1; } catch {}
 const persist = () => fs.writeFile(DATA, JSON.stringify({ list: state.list, curId: state.curId, nextId: state.nextId }), () => {});
 
 const clients = new Set();
 const sse = (c, ev, d) => c.res.write(`event: ${ev}\ndata: ${JSON.stringify(d)}\n\n`);
 const bcast = (ev, d, ctlOnly) => clients.forEach(c => { if (!ctlOnly || c.ctl) sse(c, ev, d); });
-const snapshot = () => ({ list: state.list, cur: state.curId, live: state.live, board: state.board });
+const snapshot = () => ({ list: state.list, cur: state.curId, live: state.live, hidden: state.hidden, board: state.board });
 const pushState = () => bcast('state', snapshot(), true);
 const authed = (req, u) => !KEY || req.headers['x-key'] === KEY || u.searchParams.get('key') === KEY;
 const str = v => String(v ?? '').trim().slice(0, 100);
@@ -25,6 +25,14 @@ const byId = id => state.list.find(p => p.id === id);
 const rows = () => state.list.map((p, i) => ({ ...p, i })).filter(p => p.score != null)
   .sort((a, b) => b.score - a.score || a.i - b.i).map(({ id, costume, real, cls, score }) => ({ id, costume, real, cls, score }));
 const num = v => { if (v === null || v === '' || v === undefined) return null; const n = Number(v); return Number.isFinite(n) ? Math.round(Math.min(10, Math.max(0, n)) * 10) / 10 : undefined; };
+
+const keyOf = p => [p.costume, p.real, p.cls].map(s => s.toLowerCase()).join('\u0001');
+const sendRows = (id = -1, score = null) => bcast('cmd', { type: 'score', id, score, rows: rows() });
+// Takes a removed participant off the air and out of the selection.
+function forget(ids) {
+  if (state.live && ids.has(state.live.id)) { state.live = null; state.hidden = false; bcast('cmd', { type: 'hide' }); }
+  if (ids.has(state.curId)) state.curId = null;
+}
 
 const body = req => new Promise((res, rej) => {
   let b = ''; req.on('data', c => { b += c; if (b.length > 1e6) req.destroy(); });
@@ -57,7 +65,7 @@ http.createServer(async (req, res) => {
     const c = { res, ctl }; clients.add(c);
     if (ctl) sse(c, 'state', snapshot());
     else {   // a freshly loaded overlay restores the name first, then the scoreboard on top of it
-      if (state.live) sse(c, 'cmd', { ...state.live, quiet: true });
+      if (state.live && !state.hidden) sse(c, 'cmd', { ...state.live, quiet: true });
       if (state.board) sse(c, 'cmd', { type: 'board', on: true, rows: rows(), quiet: true });
     }
     req.on('close', () => clients.delete(c));
@@ -77,9 +85,9 @@ http.createServer(async (req, res) => {
             const p = Number.isInteger(b.id) ? byId(b.id) : null;
             m = p ? { type: 'show', id: p.id, costume: p.costume, real: p.real, cls: p.cls, score: p.score ?? null }
                   : { type: 'show', id: null, costume: str(b.costume), real: str(b.real), cls: str(b.cls), score: null };
-            state.live = m;
+            state.live = m; state.hidden = false;
             if (p) { state.curId = p.id; persist(); }
-          } else if (b.type === 'hide') state.live = null;
+          } else if (b.type === 'hide') state.hidden = true;   // a modifier: the selection stays
           else if (b.type === 'board') { state.board = !!b.on; m = { type: 'board', on: state.board, rows: rows() }; }
           else if (b.type === 'cut') m.text = str(b.text) || undefined;
           bcast('cmd', m); pushState();
@@ -89,7 +97,7 @@ http.createServer(async (req, res) => {
           const p = byId(b.id), v = num(b.score);
           if (!p || v === undefined) throw 0;
           p.score = v; if (state.live && state.live.id === p.id) state.live.score = v;
-          persist(); bcast('cmd', { type: 'score', id: p.id, score: v, rows: rows() }); pushState();
+          persist(); sendRows(p.id, v); pushState();
           break;
         }
         case '/api/add':
@@ -101,13 +109,43 @@ http.createServer(async (req, res) => {
           break;
         case '/api/remove':
           state.list = state.list.filter(p => p.id !== b.id);
-          if (state.curId === b.id) state.curId = null;
-          persist(); bcast('cmd', { type: 'score', id: -1, score: null, rows: rows() }); pushState();
+          forget(new Set([b.id]));
+          persist(); sendRows(); pushState();
           break;
         case '/api/clear':
-          state.list = []; state.curId = null; persist();
-          bcast('cmd', { type: 'score', id: -1, score: null, rows: [] }); pushState();
+          forget(new Set(state.list.map(p => p.id)));
+          state.list = []; persist(); sendRows(); pushState();
           break;
+        case '/api/move': {
+          const from = state.list.findIndex(p => p.id === b.id);
+          if (from < 0 || !Number.isInteger(b.to)) throw 0;
+          const [p] = state.list.splice(from, 1);
+          state.list.splice(Math.min(state.list.length, Math.max(0, b.to)), 0, p);
+          persist(); sendRows(); pushState();
+          break;
+        }
+        case '/api/import': {   // the file's order wins; rows matching an existing participant keep its id
+          const items = Array.isArray(b.items) ? b.items.slice(0, 500) : [];
+          const pool = new Map();
+          state.list.forEach(p => pool.set(keyOf(p), [...(pool.get(keyOf(p)) || []), p]));
+          const next = [];
+          items.forEach(i => {
+            const costume = str(i.costume); if (!costume) return;
+            const row = { costume, real: str(i.real), cls: str(i.cls) }, score = num(i.score) ?? null;
+            let p = pool.get(keyOf(row))?.shift();
+            if (p) { if (score != null) p.score = score; }
+            else p = { id: state.nextId++, ...row, score };
+            next.push(p);
+          });
+          const kept = new Set(next), rest = state.list.filter(p => !kept.has(p));
+          if (!b.removeMissing) next.push(...rest);
+          else forget(new Set(rest.map(p => p.id)));
+          if (next.length > 500) throw 0;
+          state.list = next;
+          if (state.live && byId(state.live.id)) state.live.score = byId(state.live.id).score;
+          persist(); sendRows(state.live?.id ?? -1, state.live?.score ?? null); pushState();
+          break;
+        }
         default: res.writeHead(404); return res.end();
       }
       res.writeHead(204); res.end();

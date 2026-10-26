@@ -2,13 +2,15 @@
   import { onMount } from 'svelte';
   import { post, connectControl } from '../lib/api.js';
 
-  let S = $state({ list: [], cur: null, live: null, board: false });
+  let S = $state({ list: [], cur: null, live: null, hidden: false, board: false });
   let status = $state('');
   let form = $state({ costume: '', real: '', cls: '' });
   let bulk = $state('');
 
   const idx = $derived(S.list.findIndex(p => p.id === S.cur));
-  const now = $derived((S.board ? 'Scoreboard on top. ' : '') + (S.live ? 'Name: ' + S.live.costume : 'No name showing'));
+  const now = $derived((S.board ? 'Scoreboard on top. ' : '')
+    + (idx >= 0 ? `#${idx + 1} of ${S.list.length}: ${S.list[idx].costume}` : S.live ? 'Not in list: ' + S.live.costume : 'No one selected')
+    + (S.live ? (S.hidden ? ' (hidden)' : ' (on air)') : ''));
   const offline = () => { status = 'Offline'; };
   const cmd = m => post('/api/cmd', m, offline);
 
@@ -55,7 +57,8 @@
   <div class="row">
     <button class="go" onclick={() => show(idx + 1)}>Show next</button>
     <button onclick={() => show(idx - 1)}>Previous</button>
-    <button onclick={() => cmd({ type: 'hide' })}>Hide</button>
+    {#if S.hidden && idx >= 0}<button onclick={() => show(idx)}>Unhide</button>
+    {:else}<button onclick={() => cmd({ type: 'hide' })}>Hide</button>{/if}
   </div>
 </section>
 
@@ -73,6 +76,7 @@
   <ul>
     {#each S.list as p, i (p.id)}
       <li class:cur={p.id === S.cur}>
+        <span class="n">{i + 1}</span>
         <button class="t" title="Show on stream" onclick={() => show(i)}>{p.costume}<small>{[p.real, p.cls].filter(Boolean).join(', ')}</small></button>
         <span class="sc">{p.score ?? ''}</span>
         <button class="x" title="Remove" aria-label="Remove {p.costume}" onclick={() => remove(p)}>×</button>
@@ -109,6 +113,7 @@
   li.cur{background:rgba(179,16,28,.3)}
   .t{flex:1;min-width:0;text-align:left;background:none;border:0;padding:4px}
   .t small{display:block;opacity:.7}
+  .n{min-width:26px;text-align:right;opacity:.6}
   .sc{min-width:34px;text-align:right;font-weight:600}
   .x{padding:2px 8px}
   summary{cursor:pointer;margin-bottom:8px}
